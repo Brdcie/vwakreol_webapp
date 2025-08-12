@@ -1,0 +1,29 @@
+[
+  {
+    "id": "phr1",
+    "fr": "Bonjour, comment allez-vous ?",
+    "gcf": "Bonjou, kijan ou yé ?",
+    "category": "general",
+    "urgency": "low",
+    "audio": "paniaudio.mp3",
+    "updated_at": null
+  },
+  {
+    "id": "phr2", 
+    "fr": "Appelez les secours immédiatement !",
+    "gcf": "Rélé kò sekou yo rapidman !",
+    "category": "emergency",
+    "urgency": "critical",
+    "audio": "paniaudio.mp3",
+    "updated_at": null
+  },
+  {
+    "id": "phr3",
+    "fr": "Où avez-vous mal ?",
+    "gcf": "Ki kòté ou ni doulè a ?",
+    "category": "medical", 
+    "urgency": "high",
+    "audio": "audio/phr3.mp3",
+    "updated_at": 1692123456
+  }
+]

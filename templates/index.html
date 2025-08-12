@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VwaKreol - Enregistrement Audio Créole</title>
+  <style>
+    /* Couleurs POTOMITAN */
+    :root {
+      --potomitan-red: #E63946;
+      --potomitan-orange: #F3722C;
+      --potomitan-yellow: #F8961E;
+      --potomitan-green: #90BE6D;
+      --potomitan-light-blue: #ADD8E6;
+      --potomitan-medium-blue: #87CEFA;
+      --potomitan-dark-blue: #1D3557;
+      --potomitan-beige: #F1FAEE;
+    }
+    
+    body { 
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; 
+      margin: 2rem; 
+      background: linear-gradient(135deg, var(--potomitan-beige) 0%, var(--potomitan-light-blue) 100%);
+      min-height: 100vh;
+      color: var(--potomitan-dark-blue);
+    }
+    
+    h1 {
+      color: var(--potomitan-red);
+      text-align: center;
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .card { 
+      border: 2px solid var(--potomitan-medium-blue); 
+      border-radius: 16px; 
+      padding: 1.5rem; 
+      margin-bottom: 1.5rem; 
+      background: white;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    button { 
+      padding: .8rem 1.5rem; 
+      border-radius: 12px; 
+      border: 2px solid var(--potomitan-green); 
+      cursor: pointer; 
+      background: var(--potomitan-green);
+      color: white;
+      font-weight: bold;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+    
+    button:hover {
+      background: var(--potomitan-dark-blue);
+      border-color: var(--potomitan-dark-blue);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    button[disabled] { 
+      opacity: .6; 
+      cursor: not-allowed; 
+      background: #ccc;
+      border-color: #ccc;
+      transform: none;
+      box-shadow: none;
+    }
+    
+    .recording {
+      background: var(--potomitan-red) !important;
+      border-color: var(--potomitan-red) !important;
+      animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    
+    .row { 
+      display: flex; 
+      gap: 1rem; 
+      flex-wrap: wrap; 
+      align-items: center; 
+    }
+    
+    .muted { 
+      color: var(--potomitan-dark-blue); 
+      font-size: .95rem; 
+      opacity: 0.8;
+      text-align: center;
+    }
+    
+    audio { 
+      width: 100%; 
+      margin-top: 1rem;
+      border-radius: 8px;
+    }
+    
+    .pill { 
+      display: inline-block; 
+      background: var(--potomitan-orange); 
+      color: white;
+      border-radius: 999px; 
+      padding: .4rem .8rem; 
+      margin-left: .6rem; 
+      font-size: .9rem; 
+      font-weight: bold;
+    }
+    
+    code {
+      background: var(--potomitan-yellow);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+    
+    .phrase-item {
+      background: var(--potomitan-beige);
+      border: 2px solid var(--potomitan-light-blue);
+    }
+    
+    .phrase-item:hover {
+      border-color: var(--potomitan-medium-blue);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+  <h1>VwaKreol - Enregistrements Audio</h1>
+  <p class="muted">
+    Parcourez les phrases créoles à prononcer, enregistrez votre voix au micro et envoyez pour convertir en MP3.
+  </p>
+
+  <div class="card">
+    <div class="row">
+      <button id="btnLoad">Charger la liste</button>
+      <span id="count" class="pill">0</span>
+    </div>
+    <div id="list"></div>
+  </div>
+
+  <script>
+  const state = {
+    mediaRecorder: null,
+    chunks: [],
+    currentId: null
+  };
+
+  async function getStream() {
+    return await navigator.mediaDevices.getUserMedia({ audio: true });
+  }
+
+  function makeItem(item) {
+    const wrap = document.createElement('div');
+    wrap.className = 'card phrase-item';
+    wrap.innerHTML = `
+      <div><strong style="color: var(--potomitan-red);">#${item.id}</strong></div>
+      <div style="margin: 0.5rem 0;"><strong>FR:</strong> ${item.fr || ''}</div>
+      <div style="margin: 0.5rem 0;"><strong>Créole guadeloupéen:</strong> ${item.gcf || ''}</div>
+      <div class="row" style="margin-top:1rem;">
+        <button class="rec">🎤 Enregistrer</button>
+        <button class="stop" disabled>⏹️ Stop</button>
+        <button class="send" disabled>📤 Envoyer</button>
+      </div>
+      <audio controls style="display:none;"></audio>
+      <div class="muted status" style="margin-top: 1rem;"></div>
+    `;
+    const btnRec = wrap.querySelector('.rec');
+    const btnStop = wrap.querySelector('.stop');
+    const btnSend = wrap.querySelector('.send');
+    const audioEl = wrap.querySelector('audio');
+    const statusEl = wrap.querySelector('.status');
+
+    btnRec.addEventListener('click', async () => {
+      const stream = await getStream();
+      state.chunks = [];
+      state.mediaRecorder = new MediaRecorder(stream);
+      state.mediaRecorder.ondataavailable = e => state.chunks.push(e.data);
+      state.mediaRecorder.onstop = () => {
+        const blob = new Blob(state.chunks, { type: state.mediaRecorder.mimeType || 'audio/webm' });
+        audioEl.src = URL.createObjectURL(blob);
+        audioEl.dataset.blobUrl = audioEl.src;
+        btnSend.disabled = false;
+        statusEl.textContent = "Enregistrement terminé — prêt à envoyer.";
+      };
+      state.mediaRecorder.start();
+      btnRec.disabled = true;
+      btnRec.classList.add('recording');
+      btnStop.disabled = false;
+      statusEl.textContent = "🔴 Enregistrement en cours...";
+    });
+
+    btnStop.addEventListener('click', () => {
+      if (state.mediaRecorder && state.mediaRecorder.state !== 'inactive') {
+        state.mediaRecorder.stop();
+        state.mediaRecorder.stream.getTracks().forEach(t => t.stop());
+      }
+      btnStop.disabled = true;
+      btnRec.disabled = false;
+      btnRec.classList.remove('recording');
+    });
+
+    btnSend.addEventListener('click', async () => {
+      btnSend.disabled = true;
+      statusEl.textContent = "Envoi...";
+      const blob = await fetch(audioEl.dataset.blobUrl).then(r => r.blob());
+      const fd = new FormData();
+      fd.append('id', item.id);
+      fd.append('audio', blob, `${item.id}.webm`);
+
+      const res = await fetch('/api/upload', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) {
+        statusEl.textContent = "Erreur: " + (data.error || res.statusText);
+        btnSend.disabled = false;
+        return;
+      }
+      statusEl.textContent = "✅ MP3 créé et JSON mis à jour.";
+      audioEl.style.display = "block";
+      audioEl.src = data.mp3;
+      
+      // Mettre à jour le compteur
+      updateCounter();
+    });
+
+    return wrap;
+  }
+
+  async function updateCounter() {
+    try {
+      const res = await fetch('/api/todo');
+      const data = await res.json();
+      document.getElementById('count').textContent = data.count;
+    } catch (error) {
+      console.error('Erreur mise à jour compteur:', error);
+    }
+  }
+
+  async function loadList() {
+    const res = await fetch('/api/todo');
+    const data = await res.json();
+    document.getElementById('count').textContent = data.count;
+    const list = document.getElementById('list');
+    list.innerHTML = '';
+    data.items.slice(0, 200).forEach(item => { // affiche 200 d'abord pour rester fluide
+      list.appendChild(makeItem(item));
+    });
+    if (data.count > 200) {
+      const info = document.createElement('div');
+      info.className = 'muted';
+      info.textContent = `Affichage des 200 premières entrées sur ${data.count}. (pagination simple à ajouter si besoin)`;
+      list.appendChild(info);
+    }
+  }
+
+  document.getElementById('btnLoad').addEventListener('click', loadList);
+  </script>
+</body>
+</html>

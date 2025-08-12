@@ -1,0 +1,91 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# Audio files (generated content)
+audio/
+*.mp3
+*.wav
+*.webm
+
+# Data files (can become very large)
+data/phrases_data.json
+
+# Data locks
+*.lock
+
+# Logs
+sync.log
+*.log
+
+# Sync reports (keep structure but not content)
+sync_reports/*.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Local development
+.env
+.env.local
+.env.development
+.env.production
+
+# Deployment sensitive
+deploy_config.json
+server_keys/
+*.pem
+*.key
+
+# Testing
+.coverage
+.pytest_cache/
+htmlcov/
+
+# Node.js (for sync scripts)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

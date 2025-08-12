@@ -1,0 +1,6 @@
+# VwaKreol - Synchronisation automatique toutes les heures
+# Exécute le script de sync VwaKreol → POTOMITAN chaque heure
+# 0 * * * * cd /Users/brigitte/Dropbox/00-POTOMITAN/vwakreol_webapp && /usr/local/bin/node sync_to_potomitan.js >> sync.log 2>&1
+
+# Sync bidirectionnel: Serveur → VwaKreol → POTOMITAN
+0,30 9-24 * * * cd /Users/brigitte/Dropbox/00-POTOMITAN/vwakreol_webapp && /usr/local/bin/node sync_from_server.js >> sync.log 2>&1
