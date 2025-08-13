@@ -5,9 +5,9 @@ const fs = require('fs');
 const path = require('path');
 
 const SERVER_USER = process.env.SERVER_USER || 'root';
-const SERVER_IP = process.env.SERVER_IP || 'YOUR_SERVER_IP';
+const SERVER_IP = process.env.SERVER_IP || 'potomitan.io';
 const SERVER_PATH = process.env.SERVER_PATH || '/var/www/vwakreol';
-const LOCAL_PATH = process.env.LOCAL_PATH || '/path/to/vwakreol_webapp';
+const LOCAL_PATH = process.env.LOCAL_PATH || '/Users/brigitte/Dropbox/00-POTOMITAN/vwakreol_webapp';
 const POTOMITAN_PATH = process.env.POTOMITAN_PATH || '/path/to/potomitan-prototype';
 
 console.log('🔄 Sync Bidirectionnel VwaKreol');
@@ -27,14 +27,14 @@ function runCommand(command, description) {
 // 1. Récupérer les nouveaux audios du serveur
 console.log('\n🔽 Étape 1: Serveur → VwaKreol local');
 runCommand(
-  `rsync -avz --update ${SERVER_USER}@${SERVER_IP}:${SERVER_PATH}/audio/ ${LOCAL_PATH}/audio/`,
+  `rsync -avz --update -e "ssh -i ~/.ssh/id_rsa" ${SERVER_USER}@${SERVER_IP}:${SERVER_PATH}/audio/ ${LOCAL_PATH}/audio/`,
   'Récupération audios serveur'
 );
 
 // 2. Récupérer le JSON du serveur
 console.log('\n📄 Étape 2: Récupération JSON serveur');
 runCommand(
-  `scp ${SERVER_USER}@${SERVER_IP}:${SERVER_PATH}/data/phrases_data.json ${LOCAL_PATH}/data/phrases_data_server.json`,
+  `scp -i ~/.ssh/id_rsa ${SERVER_USER}@${SERVER_IP}:${SERVER_PATH}/data/phrases_data.json ${LOCAL_PATH}/data/phrases_data_server.json`,
   'Récupération JSON serveur'
 );
 
@@ -51,10 +51,10 @@ try {
     const serverPhrase = serverData.find(p => p.id === localPhrase.id);
     
     if (serverPhrase && serverPhrase.audio && serverPhrase.audio !== 'paniaudio.mp3') {
-      // Le serveur a un audio, on le garde
-      if (localPhrase.audio !== serverPhrase.audio) {
+      // Le serveur a un audio, on le garde + synchroniser updated_at si présent
+      if (localPhrase.audio !== serverPhrase.audio || (serverPhrase.updated_at && localPhrase.updated_at !== serverPhrase.updated_at)) {
         updatedCount++;
-        return { ...localPhrase, audio: serverPhrase.audio };
+        return { ...localPhrase, audio: serverPhrase.audio, updated_at: serverPhrase.updated_at };
       }
     }
     

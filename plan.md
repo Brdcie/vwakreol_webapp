@@ -27,6 +27,9 @@
 - ✅ **FileLock système** : Prévention conflits sync
 - ✅ **Cron bidirectionnel** : Sync automatique toutes les 30min
 - ✅ **Headers sécurité** : Production-ready
+- ✅ **Configuration sécurisée** : Variables serveur externalisées (.env.sync, exclusion Git)
+- ✅ **Synchronisation avancée** : Champs `audio` et `updated_at` fusionnés automatiquement
+- ✅ **Automatisation sync** : Cron job 15min pour sync bidirectionnelle continue
 
 ## ⏳ **PHASE 3 EN COURS** - PostgreSQL Enterprise
 
@@ -59,13 +62,15 @@
 
 **Capacités actuelles** :
 - Upload audio WebM → Conversion MP3 automatique
-- Synchronisation temps réel avec POTOMITAN
+- Synchronisation temps réel avec POTOMITAN (Serveur → Local → POTOMITAN)
 - Interface contributeur optimisée mobile
 - Gestion conflits avec FileLock
 - Monitoring logs et ressources serveur
+- Configuration serveur sécurisée (variables externalisées)
+- Fusion intelligente des données (`audio` + `updated_at` synchronisés)
 
 ### 📊 Statistiques de Déploiement
-- **Temps total** : 5 jours (phases 1+2)
+- **Temps total** : 2 jours (phases 1+2)
 - **Uptime** : 99.9% depuis déploiement
 - **Contributeurs actifs** : 5 personnes
 - **Phrases disponibles** : 1700+
@@ -96,3 +101,20 @@
 - Base utilisateur établie
 
 **Prêt pour Phase 3 PostgreSQL - Septembre 2025 !** 🚀
+
+Variable environnemt
+ 1. Créez .env.sync :
+  echo "SERVER_USER=root
+  SERVER_IP=potomitan.io
+  SERVER_PATH=/var/www/vwakreol
+  LOCAL_PATH=/Users/brigitte/Dropbox/00-POTOMITAN/vwakreol_webapp" >
+  .env.sync
+
+  2. Ajoutez au .gitignore :
+  echo ".env.sync" >> .gitignore
+
+  3. Modifiez sync_from_server.js pour lire le .env.sync et utilisez des
+  valeurs par défaut génériques.
+
+
+  
