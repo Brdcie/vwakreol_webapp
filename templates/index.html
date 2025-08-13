@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="fr">
 <head>
@@ -234,7 +235,7 @@
 
   async function updateCounter() {
     try {
-      const res = await fetch('/api/todo');
+      const res = await fetch(`/api/todo?v=${Date.now()}`);
       const data = await res.json();
       document.getElementById('count').textContent = data.count;
     } catch (error) {
@@ -243,7 +244,7 @@
   }
 
   async function loadList() {
-    const res = await fetch('/api/todo');
+    const res = await fetch(`/api/todo?v=${Date.now()}`);
     const data = await res.json();
     document.getElementById('count').textContent = data.count;
     const list = document.getElementById('list');

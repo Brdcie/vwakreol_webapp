@@ -9,6 +9,20 @@
 cd /Users/brigitte/Dropbox/00-POTOMITAN/vwakreol_webapp
 ```
 
+## 🏗️ Architecture déploiement
+
+### Flux de développement recommandé
+1. **Développement** sur Mac
+2. **Git commit** (backup code)
+3. **Rsync** → Serveur (déploiement)
+4. **Git push** (sauvegarde distante)
+
+### Rôles des outils
+- **Git** : Backup + versioning du code (HTML, Python, scripts)
+- **Mac** : Développement + sync données JSON
+- **Serveur DigitalOcean** : Production + données utilisateurs
+- **Rsync** : Déploiement rapide Mac → Serveur
+
 ## 🔄 Synchronisation Bidirectionnelle
 
 ### Vérifier sync automatique
@@ -26,6 +40,30 @@ node sync_from_server.js      # Serveur → Mac → POTOMITAN
 ```bash
 node sync_to_potomitan.js     # Mac → POTOMITAN uniquement
 ```
+
+## 📦 Déploiement code
+
+### Déploiement fichiers spécifiques (recommandé)
+```bash
+# HTML modifié
+rsync -avz --progress templates/index.html root@potomitan.io:/var/www/vwakreol/templates/
+ssh root@potomitan.io "systemctl restart vwakreol && systemctl status vwakreol -l"
+
+# Python modifié
+rsync -avz --progress app.py root@potomitan.io:/var/www/vwakreol/
+ssh root@potomitan.io "systemctl restart vwakreol && systemctl status vwakreol -l"
+```
+
+### Déploiement données JSON
+```bash
+# Ordre des phrases modifié
+rsync -avz --progress data/phrases_data.json root@potomitan.io:/var/www/vwakreol/data/
+ssh root@potomitan.io "systemctl restart vwakreol && systemctl status vwakreol -l"
+```
+
+### Résolution problème cache navigateur
+✅ **Solution intégrée** : L'API `/api/todo` utilise maintenant un timestamp `?v=${Date.now()}` pour éviter le cache
+✅ **Fini les problèmes** : Les utilisateurs voient immédiatement les changements d'ordre sans vider le cache
 
 ## 🌐 Gestion Serveur Production
 
