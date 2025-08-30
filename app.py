@@ -1,7 +1,8 @@
-from flask import Flask, render_template, request, jsonify, send_from_directory
+from flask import Flask, render_template, request, jsonify, send_from_directory, session
 from pathlib import Path
 import json, os, subprocess, time
 from filelock import FileLock
+import secrets
 
 APP_ROOT = Path(__file__).parent.resolve()
 DATA_JSON = APP_ROOT / "data" / "phrases_data.json"
@@ -10,6 +11,8 @@ AUDIO_DIR.mkdir(parents=True, exist_ok=True)
 LOCK_FILE = str(DATA_JSON) + ".lock"
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
+app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(16))
+ADMIN_CODE = os.environ.get('ADMIN_CODE', 'potomitan2024')
 
 # Configuration pour production
 @app.after_request
@@ -96,6 +99,83 @@ def api_upload():
 @app.route("/audio/<path:filename>")
 def serve_audio(filename):
     return send_from_directory(AUDIO_DIR, filename)
+
+@app.route("/api/login", methods=["POST"])
+def api_login():
+    code = request.json.get("code")
+    if code == ADMIN_CODE:
+        session["authenticated"] = True
+        session["user"] = request.json.get("user", "admin")
+        return jsonify({"success": True, "message": "Authentification réussie"})
+    return jsonify({"success": False, "message": "Code incorrect"}), 401
+
+@app.route("/api/logout", methods=["POST"])
+def api_logout():
+    session.clear()
+    return jsonify({"success": True, "message": "Déconnexion réussie"})
+
+@app.route("/api/status")
+def api_status():
+    return jsonify({
+        "authenticated": session.get("authenticated", False),
+        "user": session.get("user")
+    })
+
+@app.route("/api/add-phrase", methods=["POST"])
+def api_add_phrase():
+    if not session.get("authenticated"):
+        return jsonify({"error": "Non autorisé"}), 401
+    
+    phrase_data = request.json
+    required_fields = ["fr", "gcf"]
+    
+    for field in required_fields:
+        if not phrase_data.get(field):
+            return jsonify({"error": f"Champ requis manquant: {field}"}), 400
+    
+    # Générer un nouvel ID
+    try:
+        with FileLock(LOCK_FILE, timeout=5):
+            data = load_data()
+            
+            # Trouver le prochain ID numérique disponible
+            existing_ids = []
+            for item in data:
+                item_id = item.get("id", "")
+                if isinstance(item_id, str) and item_id.startswith("phr"):
+                    try:
+                        existing_ids.append(int(item_id[3:]))
+                    except ValueError:
+                        pass
+            
+            next_id = max(existing_ids, default=0) + 1
+            new_id = f"phr{next_id}"
+            
+            # Créer la nouvelle phrase
+            new_phrase = {
+                "id": new_id,
+                "fr": phrase_data["fr"].strip(),
+                "gcf": phrase_data["gcf"].strip(),
+                "audio": "paniaudio.mp3",  # Placeholder par défaut
+                "urgency": phrase_data.get("urgency", "medium"),
+                "category": phrase_data.get("category", "general"),
+                "source": "user_added",
+                "added_by": session.get("user", "unknown"),
+                "added_at": int(time.time())
+            }
+            
+            data.append(new_phrase)
+            # Écrire directement sans double verrou
+            with open(DATA_JSON, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        return jsonify({"error": f"Impossible d'ajouter la phrase (verrou): {str(e)}"}), 500
+    
+    return jsonify({
+        "success": True,
+        "message": "Phrase ajoutée avec succès",
+        "phrase": new_phrase
+    })
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8000)), debug=True)

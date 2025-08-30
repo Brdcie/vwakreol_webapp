@@ -138,6 +138,64 @@
     Parcourez les phrases créoles à prononcer, enregistrez votre voix au micro et envoyez pour convertir en MP3.
   </p>
 
+  <!-- Panel Admin -->
+  <div class="card" id="adminPanel" style="display: none;">
+    <h3 style="color: var(--potomitan-red); margin-bottom: 1rem;">📝 Administration - Ajouter une phrase</h3>
+    <div style="display: grid; gap: 1rem; margin-bottom: 1rem;">
+      <div>
+        <label><strong>Français :</strong></label>
+        <input type="text" id="newFr" placeholder="Phrase en français" style="width: 100%; padding: 0.5rem; border: 2px solid var(--potomitan-light-blue); border-radius: 8px;">
+      </div>
+      <div>
+        <label><strong>Créole guadeloupéen :</strong></label>
+        <input type="text" id="newGcf" placeholder="Traduction en créole" style="width: 100%; padding: 0.5rem; border: 2px solid var(--potomitan-light-blue); border-radius: 8px;">
+      </div>
+      <div class="row" style="gap: 1rem;">
+        <div>
+          <label><strong>Catégorie :</strong></label>
+          <select id="newCategory" style="padding: 0.5rem; border: 2px solid var(--potomitan-light-blue); border-radius: 8px;">
+            <option value="general">Général</option>
+            <option value="medical">Médical</option>
+            <option value="evacuation">Évacuation</option>
+            <option value="rescue">Secours</option>
+            <option value="information">Information</option>
+          </select>
+        </div>
+        <div>
+          <label><strong>Urgence :</strong></label>
+          <select id="newUrgency" style="padding: 0.5rem; border: 2px solid var(--potomitan-light-blue); border-radius: 8px;">
+            <option value="low">Faible</option>
+            <option value="medium">Moyenne</option>
+            <option value="high">Élevée</option>
+            <option value="critical">Critique</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <button id="btnAddPhrase">✅ Ajouter la phrase</button>
+      <button id="btnLogout" style="background: var(--potomitan-red); border-color: var(--potomitan-red);">🚪 Déconnexion</button>
+    </div>
+    <div id="addStatus" class="muted" style="margin-top: 1rem;"></div>
+  </div>
+
+  <!-- Login Panel -->
+  <div class="card" id="loginPanel">
+    <h3 style="color: var(--potomitan-orange); margin-bottom: 1rem;">🔐 Connexion Admin</h3>
+    <div style="margin-bottom: 1rem;">
+      <label><strong>Nom d'utilisateur :</strong></label>
+      <input type="text" id="loginUser" placeholder="Votre nom" style="width: 100%; padding: 0.5rem; border: 2px solid var(--potomitan-light-blue); border-radius: 8px; margin-top: 0.5rem;">
+    </div>
+    <div style="margin-bottom: 1rem;">
+      <label><strong>Code d'accès :</strong></label>
+      <input type="password" id="loginCode" placeholder="Code d'administration" style="width: 100%; padding: 0.5rem; border: 2px solid var(--potomitan-light-blue); border-radius: 8px; margin-top: 0.5rem;">
+    </div>
+    <div class="row">
+      <button id="btnLogin">🔓 Se connecter</button>
+    </div>
+    <div id="loginStatus" class="muted" style="margin-top: 1rem;"></div>
+  </div>
+
   <div class="card">
     <div class="row">
       <button id="btnLoad">Charger la liste</button>
@@ -222,7 +280,7 @@
         btnSend.disabled = false;
         return;
       }
-      statusEl.textContent = "✅ MP3 créé et JSON mis à jour.";
+      statusEl.textContent = " Audio envoyé. Merci de votre contribution";
       audioEl.style.display = "block";
       audioEl.src = data.mp3;
       
@@ -261,6 +319,110 @@
   }
 
   document.getElementById('btnLoad').addEventListener('click', loadList);
+
+  // === AUTHENTIFICATION ===
+  async function checkAuthStatus() {
+    try {
+      const res = await fetch('/api/status');
+      const data = await res.json();
+      if (data.authenticated) {
+        document.getElementById('loginPanel').style.display = 'none';
+        document.getElementById('adminPanel').style.display = 'block';
+      } else {
+        document.getElementById('loginPanel').style.display = 'block';
+        document.getElementById('adminPanel').style.display = 'none';
+      }
+    } catch (error) {
+      console.error('Erreur vérification auth:', error);
+    }
+  }
+
+  async function login() {
+    const user = document.getElementById('loginUser').value.trim();
+    const code = document.getElementById('loginCode').value.trim();
+    const statusEl = document.getElementById('loginStatus');
+    
+    if (!user || !code) {
+      statusEl.textContent = 'Veuillez remplir tous les champs';
+      return;
+    }
+    
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user, code })
+      });
+      const data = await res.json();
+      
+      statusEl.textContent = data.message;
+      if (data.success) {
+        document.getElementById('loginCode').value = '';
+        checkAuthStatus();
+      }
+    } catch (error) {
+      statusEl.textContent = 'Erreur de connexion';
+    }
+  }
+
+  async function logout() {
+    try {
+      await fetch('/api/logout', { method: 'POST' });
+      checkAuthStatus();
+    } catch (error) {
+      console.error('Erreur déconnexion:', error);
+    }
+  }
+
+  async function addPhrase() {
+    const fr = document.getElementById('newFr').value.trim();
+    const gcf = document.getElementById('newGcf').value.trim();
+    const category = document.getElementById('newCategory').value;
+    const urgency = document.getElementById('newUrgency').value;
+    const statusEl = document.getElementById('addStatus');
+    
+    if (!fr || !gcf) {
+      statusEl.textContent = 'Veuillez remplir les champs français et créole';
+      return;
+    }
+    
+    try {
+      const res = await fetch('/api/add-phrase', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fr, gcf, category, urgency })
+      });
+      const data = await res.json();
+      
+      statusEl.textContent = data.message || data.error;
+      if (data.success) {
+        // Vider les champs
+        document.getElementById('newFr').value = '';
+        document.getElementById('newGcf').value = '';
+        document.getElementById('newCategory').value = 'general';
+        document.getElementById('newUrgency').value = 'medium';
+        
+        // Recharger le compteur
+        updateCounter();
+        statusEl.textContent += ` (ID: ${data.phrase.id})`;
+      }
+    } catch (error) {
+      statusEl.textContent = 'Erreur lors de l\'ajout';
+    }
+  }
+
+  // Event listeners
+  document.getElementById('btnLogin').addEventListener('click', login);
+  document.getElementById('btnLogout').addEventListener('click', logout);
+  document.getElementById('btnAddPhrase').addEventListener('click', addPhrase);
+  
+  // Support Enter key pour login
+  document.getElementById('loginCode').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') login();
+  });
+  
+  // Vérifier le statut auth au chargement
+  checkAuthStatus();
   </script>
 </body>
 </html>
