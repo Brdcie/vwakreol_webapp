@@ -132,10 +132,10 @@
     }
   </style>
 </head>
-<body>
+<body>e
   <h1>VwaKreol - Enregistrements Audio</h1>
   <p class="muted">
-    Parcourez les phrases créoles à prononcer, enregistrez votre voix au micro et envoyez pour convertir en MP3.
+    Si tu es admin, ajoute tes phrases. Choisis une catégorie et le niveau d'urgence. Déconnecte-toi quand tu as fini.
   </p>
 
   <!-- Panel Admin -->
@@ -170,11 +170,15 @@
             <option value="critical">Critique</option>
           </select>
         </div>
+        <div>
+          <label>&nbsp;</label>
+          <button id="btnAddPhrase">✅ Ajouter</button>
+        </div>
+        <div>
+          <label>&nbsp;</label>
+          <button id="btnLogout" style="background: var(--potomitan-red); border-color: var(--potomitan-red);">🚪 Déconnexion</button>
+        </div>
       </div>
-    </div>
-    <div class="row">
-      <button id="btnAddPhrase">✅ Ajouter la phrase</button>
-      <button id="btnLogout" style="background: var(--potomitan-red); border-color: var(--potomitan-red);">🚪 Déconnexion</button>
     </div>
     <div id="addStatus" class="muted" style="margin-top: 1rem;"></div>
   </div>
@@ -195,6 +199,10 @@
     </div>
     <div id="loginStatus" class="muted" style="margin-top: 1rem;"></div>
   </div>
+
+  <p class="muted">
+    Charge la liste. Parcours les phrases créoles à prononcer. Enregistre ta voix au micro. Clique sur Stop puis sur Envoyer pour envoyer ton audio.
+  </p>
 
   <div class="card">
     <div class="row">
